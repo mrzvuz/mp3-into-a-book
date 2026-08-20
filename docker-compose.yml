@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg18
+    container_name: mp3-book-postgres
+    environment:
+      POSTGRES_DB: mp3book
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mp3book"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: mp3-book-backend
+    environment:
+      APP_ENV: development
+      LOG_LEVEL: INFO
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/mp3book
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_TRANSCRIPTION_MODEL: ${OPENAI_TRANSCRIPTION_MODEL:-gpt-4o-transcribe}
+      UPLOAD_DIR: /data/uploads
+      MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-500}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - uploads_data:/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "uv run alembic -c /app/alembic.ini upgrade head &&
+             uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: mp3-book-frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: npm run dev -- --host 0.0.0.0
+
+volumes:
+  postgres_data:
+  uploads_data:

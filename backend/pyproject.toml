@@ -1,0 +1,30 @@
+[project]
+name = "mp3-into-a-book-backend"
+version = "0.1.0"
+description = "FastAPI backend for MP3 into a Book"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.16",
+    "asyncpg>=0.30",
+    "fastapi>=0.116",
+    "greenlet>=3.1",
+    "httpx>=0.28",
+    "openai>=1.99",
+    "openai-whisper>=20240930",
+    "pydantic-settings>=2.10",
+    "python-docx>=1.2",
+    "python-multipart>=0.0.20",
+    "reportlab>=4.4",
+    "sqlalchemy>=2.0",
+    "uvicorn[standard]>=0.35",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4",
+    "pytest-asyncio>=1.1",
+    "ruff>=0.12",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
